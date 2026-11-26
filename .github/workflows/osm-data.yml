@@ -1,0 +1,48 @@
+# OSP G-B Asystent – cotygodniowy eksport danych OpenStreetMap dla map w aplikacji.
+# Każda warstwa to osobne zadanie (równolegle, najwyżej 4 naraz) i od razu po pobraniu trafia do wydania „osm-data”.
+# Nieudana lub zbyt długa warstwa nie psuje pozostałych. Wydanie jest oznaczone jako pre-release,
+# więc NIE myli się z wydaniami aplikacji (sprawdzanie aktualizacji bierze tylko „Latest”).
+name: Dane OSM dla map
+
+on:
+  schedule:
+    - cron: "17 2 * * 1"   # poniedziałek 02:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Utwórz wydanie osm-data (jeśli go nie ma)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh release view osm-data >/dev/null 2>&1 || \
+            gh release create osm-data --prerelease --latest=false --title "Dane OSM dla map" \
+              --notes "Dane OpenStreetMap (© autorzy OpenStreetMap, ODbL) dla map aplikacji. Aktualizowane automatycznie co tydzień."
+
+  export:
+    needs: release
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        layer: [straznice, sluzby, syreny, zbiorki, woda, aed, hydranty]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Pobierz warstwę ${{ matrix.layer }}
+        run: python scripts/osm_export.py out "${{ matrix.layer }}"
+      - name: Wyślij do wydania osm-data
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: gh release upload osm-data out/*.json.gz out/manifest-*.json --clobber
