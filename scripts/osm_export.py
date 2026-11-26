@@ -57,13 +57,14 @@ LAYERS = {
     "woda": ['nwr["emergency"~"^(water_tank|fire_water_pond|suction_point)$"]'],
     "hydranty": ['nwr["emergency"="fire_hydrant"]'],
     "aed": ['nwr["emergency"="defibrillator"]'],
+    "ladowiska": ['nwr["aeroway"~"^(helipad|heliport)$"]'],
 }
 
 KEEP_EXACT = {
     "name", "official_name", "short_name", "operator", "ref", "description", "note", "access", "indoor", "level",
     "phone", "opening_hours", "website", "emergency", "amenity", "capacity", "volume", "water_source", "flow_rate",
     "model", "manufacturer", "height", "tower:type", "man_made", "check_date", "healthcare", "healthcare:speciality",
-    "defibrillator:location", "location",
+    "defibrillator:location", "location", "aeroway", "lit", "surface", "icao",
 }
 KEEP_PREFIX = ("addr:", "contact:", "fire_hydrant:", "water_tank:", "siren:", "suction_point:", "couplings")
 
